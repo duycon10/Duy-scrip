@@ -1,0 +1,18 @@
+local whitelist = {
+    stiffconcerned16787 = true,
+    NDACGE = true,
+    
+
+    -- thêm tiếp ở đây
+    -- TenNguoiChoi = true,
+}
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+if not whitelist[plr.Name] then
+    plr:Kick("thằng gay ai cho sài script này")
+    return false
+end
+
+return true
