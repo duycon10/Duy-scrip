@@ -1,6 +1,6 @@
 -- -- âœ… Whitelist System (UserId-based, for script access)
 -- local whitelist = {
---     [8338257076] = true,
+--     [dy] = true,
 --     [8567162226] = true,
 --     [3499198980] = true,
 --     [8440579671] = true,
@@ -632,4 +632,5 @@ task.spawn(function()
             char.Head:Destroy()
         end
     end
+
 end)
