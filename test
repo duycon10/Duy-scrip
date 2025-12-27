@@ -1,0 +1,4441 @@
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+local Player = Players.LocalPlayer
+
+local function preventAFK()
+    VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    print("Anti-AFK: Prevented kick")
+end
+
+Player.Idled:Connect(preventAFK)
+
+
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/OMEGADEZZ/libreria-hz/refs/heads/main/libreria", true))()
+
+local window = library:AddWindow("Duy Script | Phiên Bản Premium", {
+    main_color = Color3.fromRGB(255, 119, 0),
+    min_size = Vector2.new(710, 780),
+    can_resize = true,
+})
+
+
+local AutoFarm = window:AddTab("FARM OP")
+
+
+-- Estado inicial
+getgenv()._AutoRepFarmEnabled = false  
+
+-- Switch en la librería
+AutoFarm:AddSwitch("Farm OP (Dùng nếu ping tối thiểu 250 ms)", function(state)
+    getgenv()._AutoRepFarmEnabled = state
+    warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
+end)
+
+-- Servicios
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+local LocalPlayer = Players.LocalPlayer
+
+-- Configuración
+local PET_NAME = "Swift Samurai"
+local ROCK_NAME = "Rock5M"
+local PROTEIN_EGG_NAME = "ProteinEgg"
+local PROTEIN_EGG_INTERVAL = 30 * 60
+local REPS_PER_CYCLE = 10
+local REP_DELAY = 0.01
+local ROCK_INTERVAL = 5
+local MAX_PING = 450   -- si pasa esto, pausa
+local MIN_PING = 250   -- si baja de esto, reanuda
+
+-- Variables internas
+local HumanoidRootPart
+local lastProteinEggTime = 0
+local lastRockTime = 0
+
+-- Funciones
+local function getPing()
+    local success, ping = pcall(function()
+        return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+    return success and ping or 999
+end
+
+local function updateCharacterRefs()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    HumanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+end
+
+local function equipPet()
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if petsFolder and petsFolder:FindFirstChild("Unique") then
+        for _, pet in pairs(petsFolder.Unique:GetChildren()) do
+            if pet.Name == PET_NAME then
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                break
+            end
+        end
+    end
+end
+
+local function eatProteinEgg()
+    if LocalPlayer:FindFirstChild("Backpack") then
+        for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if item.Name == PROTEIN_EGG_NAME then
+                ReplicatedStorage.rEvents.eatEvent:FireServer("eat", item)
+                break
+            end
+        end
+    end
+end
+
+local function hitRock()
+    local rock = workspace:FindFirstChild(ROCK_NAME)
+    if rock and HumanoidRootPart then
+        HumanoidRootPart.CFrame = rock.CFrame * CFrame.new(0, 0, -5)
+        ReplicatedStorage.rEvents.hitEvent:FireServer("hit", rock)
+    end
+end
+
+-- Loop principal (siempre corriendo)
+task.spawn(function()
+    updateCharacterRefs()
+    equipPet()
+    lastProteinEggTime = tick()
+    lastRockTime = tick()
+
+    local farmingPaused = false
+
+    while true do
+        if getgenv()._AutoRepFarmEnabled then
+            local ping = getPing()
+
+            -- Pausa si ping alto
+            if ping > MAX_PING then
+                if not farmingPaused then
+                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando farmeo...")
+                    farmingPaused = true
+                end
+            end
+
+            -- Reanuda si ping bajo
+            if ping <= MIN_PING then
+                if farmingPaused then
+                    warn("[Auto Rep Farm] Ping bajo ("..math.floor(ping).."ms), reanudando farmeo...")
+                    farmingPaused = false
+                end
+            end
+
+            -- Solo farmea si no está pausado
+            if not farmingPaused then
+                if LocalPlayer:FindFirstChild("muscleEvent") then
+                    for i = 1, REPS_PER_CYCLE do
+                        LocalPlayer.muscleEvent:FireServer("rep")
+                    end
+                end
+
+                if tick() - lastProteinEggTime >= PROTEIN_EGG_INTERVAL then
+                    eatProteinEgg()
+                    lastProteinEggTime = tick()
+                end
+
+                if tick() - lastRockTime >= ROCK_INTERVAL then
+                    hitRock()
+                    lastRockTime = tick()
+                end
+            end
+        end
+
+        task.wait(REP_DELAY)
+    end
+end)
+
+getgenv()._AutoRepFarmEnabled = false  
+
+-- Switch en la librería
+AutoFarm:AddSwitch("Farm OP (Dùng nếu ping tối thiểu 150 ms)", function(state)
+    getgenv()._AutoRepFarmEnabled = state
+    warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
+end)
+
+-- Servicios
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+local LocalPlayer = Players.LocalPlayer
+
+-- Configuración
+local PET_NAME = "Swift Samurai"
+local ROCK_NAME = "Rock5M"
+local PROTEIN_EGG_NAME = "ProteinEgg"
+local PROTEIN_EGG_INTERVAL = 30 * 60
+local REPS_PER_CYCLE = 40
+local REP_DELAY = 0.01
+local ROCK_INTERVAL = 5
+local MAX_PING = 5000   -- si pasa esto, pausa
+local MIN_PING = 100   -- si baja de esto, reanuda
+
+-- Variables internas
+local HumanoidRootPart
+local lastProteinEggTime = 0
+local lastRockTime = 0
+
+-- Funciones
+local function getPing()
+    local success, ping = pcall(function()
+        return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+    return success and ping or 999
+end
+
+local function updateCharacterRefs()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    HumanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+end
+
+local function equipPet()
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if petsFolder and petsFolder:FindFirstChild("Unique") then
+        for _, pet in pairs(petsFolder.Unique:GetChildren()) do
+            if pet.Name == PET_NAME then
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                break
+            end
+        end
+    end
+end
+
+local function eatProteinEgg()
+    if LocalPlayer:FindFirstChild("Backpack") then
+        for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if item.Name == PROTEIN_EGG_NAME then
+                ReplicatedStorage.rEvents.eatEvent:FireServer("eat", item)
+                break
+            end
+        end
+    end
+end
+
+local function hitRock()
+    local rock = workspace:FindFirstChild(ROCK_NAME)
+    if rock and HumanoidRootPart then
+        HumanoidRootPart.CFrame = rock.CFrame * CFrame.new(0, 0, -5)
+        ReplicatedStorage.rEvents.hitEvent:FireServer("hit", rock)
+    end
+end
+
+-- Loop principal (siempre corriendo)
+task.spawn(function()
+    updateCharacterRefs()
+    equipPet()
+    lastProteinEggTime = tick()
+    lastRockTime = tick()
+
+    local farmingPaused = false
+
+    while true do
+        if getgenv()._AutoRepFarmEnabled then
+            local ping = getPing()
+
+            -- Pausa si ping alto
+            if ping > MAX_PING then
+                if not farmingPaused then
+                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando farmeo...")
+                    farmingPaused = true
+                end
+            end
+
+            -- Reanuda si ping bajo
+            if ping <= MIN_PING then
+                if farmingPaused then
+                    warn("[Auto Rep Farm] Ping bajo ("..math.floor(ping).."ms), reanudando farmeo...")
+                    farmingPaused = false
+                end
+            end
+
+            -- Solo farmea si no está pausado
+            if not farmingPaused then
+                if LocalPlayer:FindFirstChild("muscleEvent") then
+                    for i = 1, REPS_PER_CYCLE do
+                        LocalPlayer.muscleEvent:FireServer("rep")
+                    end
+                end
+
+                if tick() - lastProteinEggTime >= PROTEIN_EGG_INTERVAL then
+                    eatProteinEgg()
+                    lastProteinEggTime = tick()
+                end
+
+                if tick() - lastRockTime >= ROCK_INTERVAL then
+                    hitRock()
+                    lastRockTime = tick()
+                end
+            end
+        end
+
+        task.wait(REP_DELAY)
+    end
+end)
+-- ✅ Auto comer huevos (modo alterno)
+local autoEatEnabled = false
+
+local function eatProteinEgg()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local egg = backpack:FindFirstChild("Protein Egg")
+    if egg then
+        egg.Parent = character
+        pcall(function()
+            egg:Activate()
+        end)
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatEnabled then
+            eatProteinEgg()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+AutoFarm:AddSwitch("Tự động ăn trứng protein mỗi 30 phút", function(state)
+    autoEatEnabled = state
+end)
+
+
+    AutoFarm:AddSwitch("Tự động quay vòng quay", function(state)
+    _G.AutoSpinWheel = state
+
+    if state then
+        spawn(function()
+            while _G.AutoSpinWheel and task.wait(0.1) do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer(
+                    "openFortuneWheel",
+                    game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"]
+                )
+            end
+        end)
+    end
+end)
+-- ✅ Optimización visual
+AutoFarm:AddSwitch("Ẩn Tất Cả Biểu Tượng", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
+end)
+
+
+AutoFarm:AddButton("Anti Lag", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+            v.Enabled = false
+        end
+    end
+ 
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.FogEnd = 9e9
+    lighting.Brightness = 0
+ 
+    settings().Rendering.QualityLevel = 1
+ 
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
+            else
+                v.Reflectance = 0
+            end
+        end
+    end
+ 
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+            v.Enabled = false
+        end
+    end
+ 
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "anti lag activado",
+        Text = "Full optimization applied!",
+        Duration = 5
+    })
+end)
+AutoFarm:AddButton("Tối ưu Hóa Toàn Bộ", function()
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local lighting = game:GetService("Lighting")
+
+    for _, gui in pairs(playerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            gui:Destroy()
+        end
+    end
+
+    local function darkenSky()
+        for _, v in pairs(lighting:GetChildren()) do
+            if v:IsA("Sky") then
+                v:Destroy()
+            end
+        end
+
+        local darkSky = Instance.new("Sky")
+        darkSky.Name = "DarkSky"
+        darkSky.SkyboxBk = "rbxassetid://0"
+        darkSky.SkyboxDn = "rbxassetid://0"
+        darkSky.SkyboxFt = "rbxassetid://0"
+        darkSky.SkyboxLf = "rbxassetid://0"
+        darkSky.SkyboxRt = "rbxassetid://0"
+        darkSky.SkyboxUp = "rbxassetid://0"
+        darkSky.Parent = lighting
+
+        lighting.Brightness = 0
+        lighting.ClockTime = 0
+        lighting.TimeOfDay = "00:00:00"
+        lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+        lighting.Ambient = Color3.new(0, 0, 0)
+        lighting.FogColor = Color3.new(0, 0, 0)
+        lighting.FogEnd = 100
+
+        task.spawn(function()
+            while true do
+                wait(5)
+                if not lighting:FindFirstChild("DarkSky") then
+                    darkSky:Clone().Parent = lighting
+                end
+                lighting.Brightness = 0
+                lighting.ClockTime = 0
+                lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+                lighting.Ambient = Color3.new(0, 0, 0)
+                lighting.FogColor = Color3.new(0, 0, 0)
+                lighting.FogEnd = 100
+            end
+        end)
+    end
+
+    local function removeParticleEffects()
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") then
+                obj:Destroy()
+            end
+        end
+    end
+
+    local function removeLightSources()
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                obj:Destroy()
+            end
+        end
+    end
+
+    removeParticleEffects()
+    removeLightSources()
+    darkenSky()
+end)
+
+
+AutoFarm:AddButton("Equip Swift Samurai", function()
+    print("Botón presionado: equipando 8 Swift Samurai")
+
+    local LocalPlayer = game:GetService("Players").LocalPlayer
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+    -- Primero desequipamos todo
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if not petsFolder then return end
+
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.1)
+
+    -- Ahora equipamos máximo 8 "Swift Samurai"
+    local equipped = 0
+    local maxEquip = 8
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                if pet.Name == "Swift Samurai" then
+                    ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                    equipped += 1
+                    print("Equipado Swift Samurai #" .. equipped)
+
+                    if equipped >= maxEquip then
+                        return -- salir cuando ya haya 8 equipados
+                    end
+                end
+            end
+        end
+    end
+
+    print("Se equiparon " .. equipped .. " Swift Samurai")
+end)
+
+
+AutoFarm:AddButton("Jungle Squat", function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    hrp.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
+    task.wait(0.2)
+
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end)
+
+AutoFarm:AddButton("Jungle lift", function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    -- Teletransportar al nuevo CFrame
+    hrp.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
+    task.wait(0.2)
+
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end)
+
+AutoFarm:AddLabel("Rebirth Đã Nhận").TextSize = 23
+
+
+local fastStrengthFolder = AutoFarm:AddFolder("Chức Năng Rebirth Nhanh")
+
+local leaderstats = LocalPlayer:WaitForChild("leaderstats")
+local rebirthsStat = leaderstats:WaitForChild("Rebirths")
+
+local footerTimeLabel = fastStrengthFolder:AddLabel("0d 0h 0m 0s")
+footerTimeLabel.TextSize = 18
+local footerRebirthsLabel = fastStrengthFolder:AddLabel("Rebirths: 0")
+footerRebirthsLabel.TextSize = 18
+local footerRebirthsGainedLabel = fastStrengthFolder:AddLabel("Rebirth Đã Nhận: 0")
+footerRebirthsGainedLabel.TextSize = 18
+
+local startTime = tick()
+local initialRebirths = rebirthsStat.Value
+
+task.spawn(function()
+    while true do
+        local elapsed = tick() - startTime
+        local days = math.floor(elapsed / 86400)
+        local hours = math.floor((elapsed % 86400) / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = math.floor(elapsed % 60)
+        footerTimeLabel.Text = string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
+        task.wait(1)
+    end
+end)
+
+local function updateRebirths()
+    local current = rebirthsStat.Value
+    local gained = current - initialRebirths
+    footerRebirthsLabel.Text = "Rebirths: " .. current
+    footerRebirthsGainedLabel.Text = "Rebirths Gained: " .. gained
+end
+
+rebirthsStat.Changed:Connect(updateRebirths)
+updateRebirths()
+
+getgenv().AutoFarming = false
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Configuración de mascotas
+local FarmPet = "Swift Samurai"
+local RebirthPet = "Tribal Overlord"
+
+-- Funciones para equipar/unequipar
+local function equipPetByName(name)
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if not petsFolder then return end
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                if pet.Name == name then
+                    ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                end
+            end
+        end
+    end
+end
+
+local function unequipAllPets()
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if not petsFolder then return end
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.1)
+end
+
+local function getGoldenRebirthCount()
+    local ultimates = LocalPlayer:FindFirstChild("ultimatesFolder")
+    if ultimates and ultimates:FindFirstChild("Golden Rebirth") then
+        return ultimates["Golden Rebirth"].Value
+    end
+    return 0
+end
+
+local function getStrengthRequiredForRebirth()
+    local rebirths = LocalPlayer.leaderstats.Rebirths.Value
+    local baseStrength = 10000 + (5000 * rebirths)
+    local golden = getGoldenRebirthCount()
+    if golden >= 1 and golden <= 5 then
+        baseStrength = baseStrength * (1 - golden * 0.1)
+    end
+    return math.floor(baseStrength)
+end
+
+-- Switch en la library
+fastStrengthFolder:AddSwitch("Rebirth Nhanh", function(state)
+    getgenv().AutoFarming = state
+
+    if state then
+        warn("⚡ AutoFarming ACTIVADO")
+
+        task.spawn(function()
+            while getgenv().AutoFarming do
+                local requiredStrength = getStrengthRequiredForRebirth()
+                print("Necesario para renacer:", requiredStrength)
+
+                -- Fase de farmeo
+                unequipAllPets()
+                equipPetByName(FarmPet)
+
+                while LocalPlayer.leaderstats.Strength.Value < requiredStrength and getgenv().AutoFarming do
+                    for _ = 1, 10 do
+                        LocalPlayer.muscleEvent:FireServer("rep")
+                    end
+                    task.wait()
+                end
+
+                if not getgenv().AutoFarming then break end
+
+                -- Fase de renacimiento
+                unequipAllPets()
+                equipPetByName(RebirthPet)
+
+                local oldRebirths = LocalPlayer.leaderstats.Rebirths.Value
+                repeat
+                    ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    task.wait(0.1)
+                until LocalPlayer.leaderstats.Rebirths.Value > oldRebirths or not getgenv().AutoFarming
+
+                print("Renacimiento hecho. Reiniciando ciclo.")
+            end
+
+            print("🛑 AutoFarming DETENIDO")
+        end)
+
+    else
+        warn("🛑 AutoFarming DESACTIVADO")
+    end
+end)
+local rebirthFolder = AutoFarm:AddFolder("Rebirth Không gói")
+
+-- Guardar objetivo de rebirths
+local targetRebirthAmount = nil
+local farmingTarget = false
+
+-- Input de rebirth objetivo
+rebirthFolder:AddTextBox("Số lượng mục tiêu Rebirth", function(value)
+    local amount = tonumber(value) or 1
+    local currentRebirths = leaderstats.Rebirths.Value
+    if amount >= currentRebirths then
+        targetRebirthAmount = amount
+    end
+end, {clear = false})
+
+-- Toggle para llegar al rebirth objetivo
+local targetRebirthToggle = rebirthFolder:AddSwitch("Bắt đầu", function(enabled)
+    farmingTarget = enabled
+    if enabled then
+        task.spawn(function()
+            while farmingTarget do
+                local currentRebirths = leaderstats.Rebirths.Value
+                local requiredStrength = 10000 + 5000 * currentRebirths
+
+                -- Si ya alcanzó el objetivo, apagar toggle
+                if targetRebirthAmount and currentRebirths >= targetRebirthAmount then
+                    targetRebirthToggle:Set(false)
+                    farmingTarget = false
+                    break
+                end
+
+                -- Hacer rebirth si ya tienes fuerza suficiente
+                if leaderstats.Strength.Value >= requiredStrength then
+                    replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    task.wait(0.7)
+                else
+                    -- Farmear fuerza
+                    for i = 1, repSpeed do
+                        MuscleEvent:FireServer("rep")
+                    end
+                end
+
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+
+rebirthFolder:AddSwitch("Tự động dịch chuyển đến Muscle King", function(enabled)
+    if enabled then
+        _G.AutoTeleportKing = true
+        local targetPosition = Vector3.new(-8750.1318359375, 124.37654876708984, -5861.2666015625)
+
+        while _G.AutoTeleportKing do
+            local player = game.Players.LocalPlayer
+            local char = player.Character
+            if char then
+                local rootPart = char:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.CFrame = CFrame.new(targetPosition)
+                    rootPart.Velocity = Vector3.new(0, 0, 0)
+                    rootPart.RotVelocity = Vector3.new(0, 0, 0)
+                end
+            end
+            task.wait(0.1)
+        end
+    else
+        _G.AutoTeleportKing = false
+    end
+end)
+
+rebirthFolder:AddSwitch("Tự động đặt kích thước 2", function(enabled)
+    if enabled then
+        _G.AutoSize2 = true
+        while _G.AutoSize2 do
+            local args = {
+                "changeSize",
+                2
+            }
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("rEvents")
+                :WaitForChild("changeSpeedSizeRemote")
+                :InvokeServer(unpack(args))
+
+            task.wait(1)
+        end
+    else
+        _G.AutoSize2 = false
+    end
+end)
+
+
+
+
+local autoEquipToolsFolder = AutoFarm:AddFolder("Bài tập tự động")
+
+-- Botón para desbloquear el Gamepass AutoLift
+autoEquipToolsFolder:AddButton("Gamepass AutoLift", function()
+    local gamepassFolder = game:GetService("ReplicatedStorage").gamepassIds
+    local player = game:GetService("Players").LocalPlayer
+    for _, gamepass in pairs(gamepassFolder:GetChildren()) do
+        local value = Instance.new("IntValue")
+        value.Name = gamepass.Name
+        value.Value = gamepass.Value
+        value.Parent = player.ownedGamepasses
+    end
+end)
+
+-- Función para crear switches de auto-equip
+local function createAutoToolSwitch(toolName, globalVar)
+    autoEquipToolsFolder:AddSwitch("tự động " .. toolName, function(Value)
+        _G[globalVar] = Value
+        
+        if Value then
+            local tool = LocalPlayer.Backpack:FindFirstChild(toolName)
+            if tool then
+                LocalPlayer.Character.Humanoid:EquipTool(tool)
+            end
+        else
+            local character = LocalPlayer.Character
+            local equipped = character:FindFirstChild(toolName)
+            if equipped then
+                equipped.Parent = LocalPlayer.Backpack
+            end
+        end
+        
+        task.spawn(function()
+            while _G[globalVar] do
+                if not _G[globalVar] then break end
+                LocalPlayer.muscleEvent:FireServer("rep")
+                task.wait(0.1)
+            end
+        end)
+    end)
+end
+
+createAutoToolSwitch("Weight", "AutoWeight")
+createAutoToolSwitch("Pushups", "AutoPushups")
+createAutoToolSwitch("Handstands", "AutoHandstands")
+createAutoToolSwitch("Situps", "AutoSitups")
+
+
+autoEquipToolsFolder:AddSwitch("Tự động đấm", function(Value)
+    _G.fastHitActive = Value
+    
+    if Value then
+        task.spawn(function()
+            while _G.fastHitActive do
+                if not _G.fastHitActive then break end
+                
+                local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if punch then
+                    punch.Parent = LocalPlayer.Character
+                    if punch:FindFirstChild("attackTime") then
+                        punch.attackTime.Value = 0
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        
+        task.spawn(function()
+            while _G.fastHitActive do
+                if not _G.fastHitActive then break end
+                
+                LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+                LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+                
+                local character = LocalPlayer.Character
+                if character then
+                    local punchTool = character:FindFirstChild("Punch")
+                    if punchTool then
+                        punchTool:Activate()
+                    end
+                end
+                task.wait()
+            end
+        end)
+    else
+        local character = LocalPlayer.Character
+        local equipped = character:FindFirstChild("Punch")
+        if equipped then
+            equipped.Parent = LocalPlayer.Backpack
+        end
+    end
+end)
+
+autoEquipToolsFolder:AddSwitch("đấm nhanh", function(Value)
+    _G.FastTools = Value
+    
+    local toolSettings = {
+        {"Punch", "attackTime", Value and 0 or 0.35},
+        {"Ground Slam", "attackTime", Value and 0 or 6},
+        {"Stomp", "attackTime", Value and 0 or 7},
+        {"Handstands", "repTime", Value and 0 or 1},
+        {"Pushups", "repTime", Value and 0 or 1},
+        {"Weight", "repTime", Value and 0 or 1},
+        {"Situps", "repTime", Value and 0 or 1}
+    }
+    
+    local backpack = LocalPlayer:WaitForChild("Backpack")
+    
+    for _, toolInfo in ipairs(toolSettings) do
+        local tool = backpack:FindFirstChild(toolInfo[1])
+        if tool and tool:FindFirstChild(toolInfo[2]) then
+            tool[toolInfo[2]].Value = toolInfo[3]
+        end
+        
+        local equippedTool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild(toolInfo[1])
+        if equippedTool and equippedTool:FindFirstChild(toolInfo[2]) then
+            equippedTool[toolInfo[2]].Value = toolInfo[3]
+        end
+    end
+end)
+
+
+local estadisticas = window:AddTab("Thông số")
+
+local SelectPlayerName = ""
+
+local PlayerDrop = estadisticas:AddDropdown("Chọn người chơi", function(Value)
+    SelectPlayerName = Value:match("| (.+)")
+    previousValues = {}
+end)
+
+local Playerslist = {}
+for _, Plr in pairs(game:GetService("Players"):GetPlayers()) do
+    local displayName = Plr.DisplayName .. " | " .. Plr.Name
+    table.insert(Playerslist, displayName)
+end
+for _, AddPlr in ipairs(Playerslist) do
+    PlayerDrop:Add(AddPlr)
+end
+
+local function FormatNumberWithCommas(number)
+    local formatted = tostring(number):reverse():gsub("(%d%d%d)", "%1,"):reverse()
+    return formatted:gsub("^,", "")
+end
+
+local function FormatAbbreviated(number)
+    local abbreviations = {"", "K", "M", "B", "T", "Qa", "Qi"}
+    local abbreviationIndex = 1
+    while number >= 1000 do
+        number = number / 1000
+        abbreviationIndex = abbreviationIndex + 1
+    end
+    return string.format("%.2f", number) .. abbreviations[abbreviationIndex]
+end
+
+local function FormatDisplay(value)
+    local normal = FormatNumberWithCommas(value)
+    local abbreviated = FormatAbbreviated(value)
+    return "[ " .. normal .. " | " .. abbreviated .. " ]"
+end
+
+local previousValues = {}
+
+local Update = estadisticas:AddLabel("")
+local Update1 = estadisticas:AddLabel("")
+local Update2 = estadisticas:AddLabel("")
+local Update3 = estadisticas:AddLabel("")
+local Update4 = estadisticas:AddLabel("")
+local Update5 = estadisticas:AddLabel("")
+local Update6 = estadisticas:AddLabel("")
+local Update9 = estadisticas:AddLabel("")
+local Update10 = estadisticas:AddLabel("")
+local Update11 = estadisticas:AddLabel("")
+local Update12 = estadisticas:AddLabel("")
+local Update13 = estadisticas:AddLabel("")
+
+task.spawn(function()
+    while task.wait(0) do
+        if SelectPlayerName ~= "" then
+            local player = game.Players:FindFirstChild(SelectPlayerName)
+            if player then
+                if player:FindFirstChild("Gems") then
+                    Update1.Text = "Gem: " .. FormatDisplay(player.Gems.Value)
+                end
+                if player:FindFirstChild("Agility") then
+                    Update3.Text = "Nhanh Nhẹn: " .. FormatDisplay(player.Agility.Value)
+                end
+                if player:FindFirstChild("Durability") then
+                    Update4.Text = "Độ Bền: " .. FormatDisplay(player.Durability.Value)
+                end
+                if player:FindFirstChild("muscleKingTime") then
+                    Update6.Text = "Thời Gian Muscle King: " .. FormatDisplay(player.muscleKingTime.Value)
+                end
+                if player:FindFirstChild("customSize") then
+                    Update10.Text = "Kích Thước Tùy Chỉnh: " .. FormatDisplay(player.customSize.Value)
+                end
+                if player:FindFirstChild("customSpeed") then
+                    Update11.Text = "Tốc Độ Tùy Chỉnh: " .. FormatDisplay(player.customSpeed.Value)
+                end
+                if player:FindFirstChild("evilKarma") then
+                    Update12.Text = "Evil Karma: " .. FormatDisplay(player.evilKarma.Value)
+                end
+                if player:FindFirstChild("goodKarma") then
+                    Update13.Text = "Good Karma: " .. FormatDisplay(player.goodKarma.Value)
+                end
+
+                local leaderstats = player:FindFirstChild("leaderstats")
+                if leaderstats then
+                    if leaderstats:FindFirstChild("Strength") then
+                        Update.Text = "Sức Mạnh: " .. FormatDisplay(leaderstats.Strength.Value)
+                    end
+                    if leaderstats:FindFirstChild("Rebirths") then
+                        Update2.Text = "Rebirths: " .. FormatDisplay(leaderstats.Rebirths.Value)
+                    end
+                    if leaderstats:FindFirstChild("Kills") then
+                        Update5.Text = "Kills: " .. FormatDisplay(leaderstats.Kills.Value)
+                    end
+                end
+
+                if player:FindFirstChild("currentMap") then
+                    Update9.Text = "Map hiện tại: " .. tostring(player.currentMap.Value)
+                else
+                    Update9.Text = "Map hiện tại: Aucune donnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e"
+                end
+            end
+        end
+    end
+end)
+-- Advanced Stats dentro de "Thống kê"
+estadisticas:AddLabel("————————————————————————————")
+estadisticas:AddLabel("Thống kê nâng cao:").TextSize = 24
+
+local enemyHealthLabel = estadisticas:AddLabel("Máu kẻ thù: N/A")
+enemyHealthLabel.TextSize = 20
+enemyHealthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local playerDamageLabel = estadisticas:AddLabel("Sát thương của bạn: N/A")
+playerDamageLabel.TextSize = 20
+playerDamageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local hitsToKillLabel = estadisticas:AddLabel("Số đòn để hạ: N/A")
+hitsToKillLabel.TextSize = 20
+hitsToKillLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local function calculateEnemyHealth(targetPlayer)
+    if not targetPlayer then
+        return 0
+    end
+    local baseDura = 0
+    local durabilityStat =
+        targetPlayer:FindFirstChild("Durability") or
+        (targetPlayer:FindFirstChild("leaderstats") and targetPlayer.leaderstats:FindFirstChild("Durability"))
+    if durabilityStat then
+        baseDura = durabilityStat.Value
+    end
+    local totalMultiplier = 1
+    local ultFolder = targetPlayer:FindFirstChild("ultimatesFolder")
+    if ultFolder then
+        local infernalHealth = ultFolder:FindFirstChild("Infernal Health")
+        if infernalHealth then
+            local upgrades = infernalHealth.Value or 0
+            totalMultiplier = totalMultiplier + 0.15 * upgrades
+        end
+    end
+    local backpack = targetPlayer:FindFirstChild("Backpack")
+    if backpack then
+        local equippedPets = backpack:FindFirstChild("EquippedPets") or backpack:FindFirstChild("equippedPets")
+        if equippedPets then
+            for _, pet in ipairs(equippedPets:GetChildren()) do
+                if string.lower(tostring(pet)):match("mighty") and string.lower(tostring(pet)):match("monster") then
+                    totalMultiplier = totalMultiplier + 0.5
+                    break
+                end
+            end
+        end
+    end
+    local totalHealth = baseDura * totalMultiplier
+    return totalHealth
+end
+
+local function calculateLocalPlayerDamage()
+    local strengthStat = nil
+    local leaderstats = Player:FindFirstChild("leaderstats")
+    if leaderstats then
+        strengthStat = leaderstats:FindFirstChild("Strength")
+    end
+    if not strengthStat then
+        return 0
+    end
+    local baseDamage = strengthStat.Value * 0.0667
+    local totalMultiplier = 1
+    local ultFolder = Player:FindFirstChild("ultimatesFolder")
+    if ultFolder then
+        local demonDamage = ultFolder:FindFirstChild("Demon Damage")
+        if demonDamage then
+            local upgrades = demonDamage.Value or 0
+            totalMultiplier = totalMultiplier + math.min(0.1 * upgrades, 0.5)
+        end
+    end
+    local backpack = Player:FindFirstChild("Backpack")
+    if backpack then
+        local equippedPets = backpack:FindFirstChild("EquippedPets") or backpack:FindFirstChild("equippedPets")
+        if equippedPets then
+            for _, pet in ipairs(equippedPets:GetChildren()) do
+                if string.lower(tostring(pet)):match("wild") and string.lower(tostring(pet)):match("wizard") then
+                    totalMultiplier = totalMultiplier + 0.5
+                    break
+                end
+            end
+        end
+    end
+    baseDamage = baseDamage * totalMultiplier
+    return baseDamage
+end
+
+local function calculateHitsToKill(health, damage)
+    if damage <= 0 then
+        return "∞"
+    end
+    local hits = math.ceil(health / damage)
+    if hits > 50 then
+        return "∞"
+    elseif hits < 1 then
+        return 1
+    else
+        return hits
+    end
+end
+
+local function updateAdvancedStats(targetPlayer)
+    if not targetPlayer then
+        enemyHealthLabel.Text = "Máu của kẻ địch: N/A"
+        playerDamageLabel.Text = "Sát thương của bạn: N/A"
+        hitsToKillLabel.Text = "Số đòn để giết: N/A"
+        return
+    end
+    local enemyHealth = calculateEnemyHealth(targetPlayer)
+    local playerDamage = calculateLocalPlayerDamage()
+    local hitsToKill = calculateHitsToKill(enemyHealth, playerDamage)
+    enemyHealthLabel.Text = "Máu của kẻ địch: " .. FormatDisplay(enemyHealth)
+    playerDamageLabel.Text = "Sát thương của bạn: " .. FormatDisplay(playerDamage)
+    hitsToKillLabel.Text = "Đòn đánh để giết: " .. tostring(hitsToKill)
+end
+
+task.spawn(function()
+    while true do
+        local selectedPlayer = game.Players:FindFirstChild(SelectPlayerName)
+        if selectedPlayer then
+            updateAdvancedStats(selectedPlayer)
+        else
+            updateAdvancedStats(nil)
+        end
+        task.wait(0.2)
+    end
+end)
+
+local Killer = window:AddTab("Giết")
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local playerWhitelist = {}
+local targetPlayerNames = {}
+local autoGoodKarma = false
+local autoBadKarma = false
+local autoKill = false
+local killTarget = false
+local spying = false
+local autoEquipPunch = false
+local autoPunchNoAnim = false
+local targetDropdownItems = {}
+local availableTargets = {}
+
+local titleLabel = Killer:AddLabel("Chọn PET theo sát thương hoặc độ bền")
+titleLabel.TextSize = 18
+titleLabel.Font = Enum.Font.Merriweather 
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local dropdown = Killer:AddDropdown("Chọn PET", function(text)
+    local petsFolder = game.Players.LocalPlayer.petsFolder
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.2)
+
+    local petName = text
+    local petsToEquip = {}
+
+    for _, pet in pairs(game.Players.LocalPlayer.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            table.insert(petsToEquip, pet)
+        end
+    end
+
+    local maxPets = 8
+    local equippedCount = math.min(#petsToEquip, maxPets)
+
+    for i = 1, equippedCount do
+        game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
+        task.wait(0.1)
+    end
+end)
+
+local Wild_Wizard = dropdown:Add("Wild Wizard")
+local Powerful_Monster = dropdown:Add("Mighty Monster")
+
+
+Killer:AddSwitch("Tự Động Farm Good Karma", function(bool)
+    autoGoodKarma = bool
+    task.spawn(function()
+        while autoGoodKarma do
+            local playerChar = LocalPlayer.Character
+            local rightHand = playerChar and playerChar:FindFirstChild("RightHand")
+            local leftHand = playerChar and playerChar:FindFirstChild("LeftHand")
+            if playerChar and rightHand and leftHand then
+                for _, target in ipairs(Players:GetPlayers()) do
+                    if target ~= LocalPlayer then
+                        local evilKarma = target:FindFirstChild("evilKarma")
+                        local goodKarma = target:FindFirstChild("goodKarma")
+                        if evilKarma and goodKarma and evilKarma:IsA("IntValue") and goodKarma:IsA("IntValue") and evilKarma.Value > goodKarma.Value then
+                            local rootPart = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+                            if rootPart then
+                                firetouchinterest(rightHand, rootPart, 1)
+                                firetouchinterest(leftHand, rootPart, 1)
+                                firetouchinterest(rightHand, rootPart, 0)
+                                firetouchinterest(leftHand, rootPart, 0)
+                            end
+                        end
+                    end
+                end
+            end
+            task.wait(0.01)
+        end
+    end)
+end)
+
+Killer:AddSwitch("Tự Động Farm Evil Karma", function(bool)
+    autoBadKarma = bool
+    task.spawn(function()
+        while autoBadKarma do
+            local playerChar = LocalPlayer.Character
+            local rightHand = playerChar and playerChar:FindFirstChild("RightHand")
+            local leftHand = playerChar and playerChar:FindFirstChild("LeftHand")
+            if playerChar and rightHand and leftHand then
+                for _, target in ipairs(Players:GetPlayers()) do
+                    if target ~= LocalPlayer then
+                        local evilKarma = target:FindFirstChild("evilKarma")
+                        local goodKarma = target:FindFirstChild("goodKarma")
+                        if evilKarma and goodKarma and evilKarma:IsA("IntValue") and goodKarma:IsA("IntValue") and goodKarma.Value > evilKarma.Value then
+                            local rootPart = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+                            if rootPart then
+                                firetouchinterest(rightHand, rootPart, 1)
+                                firetouchinterest(leftHand, rootPart, 1)
+                                firetouchinterest(rightHand, rootPart, 0)
+                                firetouchinterest(leftHand, rootPart, 0)
+                            end
+                        end
+                    end
+                end
+            end
+            task.wait(0.01)
+        end
+    end)
+end)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local friendWhitelistActive = false
+
+Killer:AddSwitch("Tự động Danh Sách Trắng Bạn Bè", function(state)
+    friendWhitelistActive = state
+
+    if state then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and LocalPlayer:IsFriendsWith(player.UserId) then
+                playerWhitelist[player.Name] = true
+            end
+        end
+
+        Players.PlayerAdded:Connect(function(player)
+            if friendWhitelistActive and player ~= LocalPlayer and LocalPlayer:IsFriendsWith(player.UserId) then
+                playerWhitelist[player.Name] = true
+            end
+        end)
+    else
+        for name in pairs(playerWhitelist) do
+            local friend = Players:FindFirstChild(name)
+            if friend and LocalPlayer:IsFriendsWith(friend.UserId) then
+                playerWhitelist[name] = nil
+            end
+        end
+    end
+end)
+
+Killer:AddTextBox("Danh Sách Trắng", function(text)
+    local target = Players:FindFirstChild(text)
+    if target then
+        playerWhitelist[target.Name] = true
+    end
+end)
+
+Killer:AddTextBox("Danh Sách Đen", function(text)
+    local target = Players:FindFirstChild(text)
+    if target then
+        playerWhitelist[target.Name] = nil
+    end
+end)
+
+Killer:AddSwitch("Tự Động Giết", function(bool)
+    autoKill = bool
+
+    task.spawn(function()
+        while autoKill do
+            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local rightHand = character:FindFirstChild("RightHand")
+            local leftHand = character:FindFirstChild("LeftHand")
+
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+            if punch and not character:FindFirstChild("Punch") then
+                punch.Parent = character
+            end
+
+            if rightHand and leftHand then
+                for _, target in ipairs(Players:GetPlayers()) do
+                    if target ~= LocalPlayer and not playerWhitelist[target.Name] then
+                        local targetChar = target.Character
+                        local rootPart = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+                        if rootPart then
+                            pcall(function()
+                                firetouchinterest(rightHand, rootPart, 1)
+                                firetouchinterest(leftHand, rootPart, 1)
+                                firetouchinterest(rightHand, rootPart, 0)
+                                firetouchinterest(leftHand, rootPart, 0)
+                            end)
+                        end
+                    end
+                end
+            end
+
+            task.wait(0.05)
+        end
+    end)
+end)
+
+local targetDropdownItems = {}
+local targetPlayerNames = {}
+local selectedTarget = nil
+
+-- Dropdown con DisplayName
+local targetDropdown = Killer:AddDropdown("Chọn Mục Tiêu", function(displayName)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.DisplayName == displayName then
+            if not table.find(targetPlayerNames, player.Name) then
+                table.insert(targetPlayerNames, player.Name) -- usamos Name internamente
+            end
+            selectedTarget = player.Name
+            break
+        end
+    end
+end)
+
+-- Botón para remover el target seleccionado (solo lista interna)
+Killer:AddButton("Bỏ Mục Tiêu Đã Chọn", function()
+    if selectedTarget then
+        for i, v in ipairs(targetPlayerNames) do
+            if v == selectedTarget then
+                table.remove(targetPlayerNames, i)
+                break
+            end
+        end
+        selectedTarget = nil
+    end
+end)
+
+-- Inicializar con jugadores actuales
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        targetDropdown:Add(player.DisplayName)
+        targetDropdownItems[player.Name] = player.DisplayName
+    end
+end
+
+-- Cuando entra alguien nuevo
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        targetDropdown:Add(player.DisplayName)
+        targetDropdownItems[player.Name] = player.DisplayName
+    end
+end)
+
+-- Cuando se va alguien
+Players.PlayerRemoving:Connect(function(player)
+    if targetDropdownItems[player.Name] then
+        targetDropdownItems[player.Name] = nil
+        targetDropdown:Clear()
+        for _, displayName in pairs(targetDropdownItems) do
+            targetDropdown:Add(displayName)
+        end
+    end
+
+    for i = #targetPlayerNames, 1, -1 do
+        if targetPlayerNames[i] == player.Name then
+            table.remove(targetPlayerNames, i)
+        end
+    end
+end)
+
+-- Switch de kill con soporte DisplayName
+Killer:AddSwitch("Bắt đầu tiêu diệt mục tiêu", function(state)
+    killTarget = state
+
+    task.spawn(function()
+        while killTarget do
+            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+            if punch and not character:FindFirstChild("Punch") then
+                punch.Parent = character
+            end
+
+            local rightHand = character:FindFirstChild("RightHand")
+            local leftHand = character:FindFirstChild("LeftHand")
+
+            if rightHand and leftHand then
+                for _, name in ipairs(targetPlayerNames) do
+                    local target = Players:FindFirstChild(name)
+                    if target and target ~= LocalPlayer and target.Character then
+                        local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
+                        local humanoid = target.Character:FindFirstChild("Humanoid")
+                        if rootPart and humanoid and humanoid.Health > 0 then
+                            pcall(function()
+                                firetouchinterest(rightHand, rootPart, 1)
+                                firetouchinterest(leftHand, rootPart, 1)
+                                firetouchinterest(rightHand, rootPart, 0)
+                                firetouchinterest(leftHand, rootPart, 0)
+                            end)
+                        end
+                    end
+                end
+            end
+
+            task.wait(0.05)
+        end
+    end)
+end)
+
+local spyTargetDropdownItems = {}
+local targetPlayerName = nil
+
+local spyTargetDropdown = Killer:AddDropdown("Chọn để theo dõi mục tiêu", function(displayName)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.DisplayName == displayName then
+            targetPlayerName = player.Name
+            break
+        end
+    end
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        spyTargetDropdown:Add(player.DisplayName)
+        spyTargetDropdownItems[player.Name] = player.DisplayName
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        spyTargetDropdown:Add(player.DisplayName)
+        spyTargetDropdownItems[player.Name] = player.DisplayName
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if player ~= LocalPlayer then
+        spyTargetDropdownItems[player.Name] = nil
+        spyTargetDropdown:Clear()
+        for _, displayName in pairs(spyTargetDropdownItems) do
+            spyTargetDropdown:Add(displayName)
+        end
+    end
+end)
+
+Killer:AddSwitch("Theo dõi người chơi", function(bool)
+    spying = bool
+    if not spying then
+        local cam = workspace.CurrentCamera
+        cam.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or LocalPlayer
+        return
+    end
+    task.spawn(function()
+        while spying do
+            local target = Players:FindFirstChild(targetPlayerName)
+            if target and target ~= LocalPlayer then
+                local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    workspace.CurrentCamera.CameraSubject = humanoid
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
+end)
+
+local button = Killer:AddButton("Xóa hoạt ảnh đấm", function()
+    local blockedAnimations = {
+        ["rbxassetid://3638729053"] = true,
+        ["rbxassetid://3638767427"] = true,
+    }
+
+    local function setupAnimationBlocking()
+        local char = game.Players.LocalPlayer.Character
+        if not char or not char:FindFirstChild("Humanoid") then return end
+
+        local humanoid = char:FindFirstChild("Humanoid")
+
+        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+            if track.Animation then
+                local animId = track.Animation.AnimationId
+                local animName = track.Name:lower()
+
+                if blockedAnimations[animId] or
+                    animName:match("punch") or
+                    animName:match("attack") or
+                    animName:match("right") then
+                    track:Stop()
+                end
+            end
+        end
+
+        if not _G.AnimBlockConnection then
+            local connection = humanoid.AnimationPlayed:Connect(function(track)
+                if track.Animation then
+                    local animId = track.Animation.AnimationId
+                    local animName = track.Name:lower()
+
+                    if blockedAnimations[animId] or
+                        animName:match("punch") or
+                        animName:match("attack") or
+                        animName:match("right") then
+                        track:Stop()
+                    end
+                end
+            end)
+
+            _G.AnimBlockConnection = connection
+        end
+    end
+
+    setupAnimationBlocking()
+
+    local function overrideToolActivation()
+        local function processTool(tool)
+            if tool and (tool.Name == "Punch" or tool.Name:match("Attack") or tool.Name:match("Right")) then
+                if not tool:GetAttribute("ActivatedOverride") then
+                    tool:SetAttribute("ActivatedOverride", true)
+
+                    local connection = tool.Activated:Connect(function()
+                        task.wait(0.05)
+
+                        local char = game.Players.LocalPlayer.Character
+                        if char and char:FindFirstChild("Humanoid") then
+                            for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
+                                if track.Animation then
+                                    local animId = track.Animation.AnimationId
+                                    local animName = track.Name:lower()
+
+                                    if blockedAnimations[animId] or
+                                        animName:match("punch") or
+                                        animName:match("attack") or
+                                        animName:match("right") then
+                                        track:Stop()
+                                    end
+                                end
+                            end
+                        end
+                    end)
+
+                    if not _G.ToolConnections then
+                        _G.ToolConnections = {}
+                    end
+                    _G.ToolConnections[tool] = connection
+                end
+            end
+        end
+
+        for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+            processTool(tool)
+        end
+
+        local char = game.Players.LocalPlayer.Character
+        if char then
+            for _, tool in pairs(char:GetChildren()) do
+                if tool:IsA("Tool") then
+                    processTool(tool)
+                end
+            end
+        end
+
+        if not _G.BackpackAddedConnection then
+            _G.BackpackAddedConnection = game.Players.LocalPlayer.Backpack.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") then
+                    task.wait(0.1)
+                    processTool(child)
+                end
+            end)
+        end
+
+        if not _G.CharacterToolAddedConnection and char then
+            _G.CharacterToolAddedConnection = char.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") then
+                    task.wait(0.1)
+                    processTool(child)
+                end
+            end)
+        end
+    end
+
+    overrideToolActivation()
+
+    if not _G.AnimMonitorConnection then
+        _G.AnimMonitorConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            if tick() % 0.5 < 0.01 then
+                local char = game.Players.LocalPlayer.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
+                        if track.Animation then
+                            local animId = track.Animation.AnimationId
+                            local animName = track.Name:lower()
+
+                            if blockedAnimations[animId] or
+                                animName:match("punch") or
+                                animName:match("attack") or
+                                animName:match("right") then
+                                track:Stop()
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    if not _G.CharacterAddedConnection then
+        _G.CharacterAddedConnection = game.Players.LocalPlayer.CharacterAdded:Connect(function(newChar)
+            task.wait(1)
+            setupAnimationBlocking()
+            overrideToolActivation()
+
+            if _G.CharacterToolAddedConnection then
+                _G.CharacterToolAddedConnection:Disconnect()
+            end
+
+            _G.CharacterToolAddedConnection = newChar.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") then
+                    task.wait(0.1)
+                    processTool(child)
+                end
+            end)
+        end)
+    end
+end)
+
+function RecoveryPunch()
+    if _G.AnimBlockConnection then
+        _G.AnimBlockConnection:Disconnect()
+        _G.AnimBlockConnection = nil
+    end
+    if _G.AnimMonitorConnection then
+        _G.AnimMonitorConnection:Disconnect()
+        _G.AnimMonitorConnection = nil
+    end
+    if _G.ToolConnections then
+        for _, conn in pairs(_G.ToolConnections) do
+            if conn then conn:Disconnect() end
+        end
+        _G.ToolConnections = nil
+    end
+    if _G.BackpackAddedConnection then
+        _G.BackpackAddedConnection:Disconnect()
+        _G.BackpackAddedConnection = nil
+    end
+    if _G.CharacterToolAddedConnection then
+        _G.CharacterToolAddedConnection:Disconnect()
+        _G.CharacterToolAddedConnection = nil
+    end
+    if _G.CharacterAddedConnection then
+        _G.CharacterAddedConnection:Disconnect()
+        _G.CharacterAddedConnection = nil
+    end
+end
+
+Killer:AddButton("Bật lại hoạt ảnh đấm", function()
+    RecoveryPunch()
+end)
+
+Killer:AddSwitch("Tự động trang bị đấm", function(state)
+	autoEquipPunch = state
+	task.spawn(function()
+		while autoEquipPunch do
+			local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+			if punch then
+				punch.Parent = LocalPlayer.Character
+			end
+			task.wait(0.1)
+		end
+	end)
+end)
+
+Killer:AddSwitch("Đấm tự động [không animation]", function(state)
+	autoPunchNoAnim = state
+	task.spawn(function()
+		while autoPunchNoAnim do
+			local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+			if punch then
+				if punch.Parent ~= LocalPlayer.Character then
+					punch.Parent = LocalPlayer.Character
+				end
+				LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+				LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+			else
+				autoPunchNoAnim = false
+			end
+			task.wait(0.01)
+		end
+	end)
+end)
+
+Killer:AddSwitch("Tự động đấm", function(state)
+	_G.fastHitActive = state
+	if state then
+		task.spawn(function()
+			while _G.fastHitActive do
+				local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+				if punch then
+					punch.Parent = LocalPlayer.Character
+					if punch:FindFirstChild("attackTime") then
+						punch.attackTime.Value = 0
+					end
+				end
+				task.wait(0.1)
+			end
+		end)
+		task.spawn(function()
+			while _G.fastHitActive do
+				local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+				if punch then
+					punch:Activate()
+				end
+				task.wait(0.1)
+			end
+		end)
+	else
+		local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+		if punch then
+			punch.Parent = LocalPlayer.Backpack
+		end
+	end
+end)
+
+Killer:AddSwitch("Đấm nhanh", function(state)
+	_G.autoPunchActive = state
+	if state then
+		task.spawn(function()
+			while _G.autoPunchActive do
+				local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+				if punch then
+					punch.Parent = LocalPlayer.Character
+					if punch:FindFirstChild("attackTime") then
+						punch.attackTime.Value = 0
+					end
+				end
+				task.wait()
+			end
+		end)
+		task.spawn(function()
+			while _G.autoPunchActive do
+				local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+				if punch then
+					punch:Activate()
+				end
+				task.wait()
+			end
+		end)
+	else
+		local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+		if punch then
+			punch.Parent = LocalPlayer.Backpack
+		end
+	end
+end)
+
+
+
+local godModeToggle = false
+Killer:AddSwitch("God Mode", function(State)
+    godModeToggle = State
+    if State then
+        task.spawn(function()
+            while godModeToggle do
+                game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer("joinBrawl")
+                task.wait()
+            end
+        end)
+    end
+end)
+-- 📌 Teleport / Follow System (versión auto-follow desde Dropdown)
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local following = false
+local followTarget = nil
+
+-- 📌 Función: TP detrás del jugador
+local function followPlayer(targetPlayer)
+    local myChar = LocalPlayer.Character
+    local targetChar = targetPlayer.Character
+
+    if not (myChar and targetChar) then return end
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+
+    if myHRP and targetHRP then
+        local followPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 3)
+        myHRP.CFrame = CFrame.new(followPos, targetHRP.Position)
+    end
+end
+
+-- 📌 Dropdown dinámico de jugadores
+local followDropdown = Killer:AddDropdown("Tự động dịch sang: Dịch chuyển đến người chơi", function(selectedDisplayName)
+    if selectedDisplayName and selectedDisplayName ~= "" then
+        -- Buscar jugador por DisplayName
+        local target = nil
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr.DisplayName == selectedDisplayName then
+                target = plr
+                break
+            end
+        end
+
+        if target then
+            followTarget = target.Name -- Guardamos Name real para seguir
+            following = true
+            print("✅ Started following:", target.Name)
+
+            -- TP inmediato
+            followPlayer(target)
+        end
+    end
+end)
+
+-- 📌 Inicializar lista con DisplayNames
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        followDropdown:Add(player.DisplayName)
+    end
+end
+
+-- 📌 Actualizar lista cuando entren jugadores
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        followDropdown:Add(player.DisplayName)
+    end
+end)
+
+-- 📌 Actualizar lista cuando se vayan jugadores
+Players.PlayerRemoving:Connect(function(player)
+    -- Limpiamos y agregamos de nuevo
+    followDropdown:Clear()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            followDropdown:Add(plr.DisplayName)
+        end
+    end
+
+    -- Dejar de seguir si se fue
+    if followTarget == player.Name then
+        followTarget = nil
+        following = false
+    end
+end)
+
+-- 📌 Botón para dejar de seguir
+Killer:AddButton("Dừng theo dõi", function()
+    following = false
+    followTarget = nil
+    print("⛔ Stopped following")
+end)
+
+-- 📌 Loop de seguimiento automático
+task.spawn(function()
+    while task.wait(0.01) do
+        if following and followTarget then
+            local target = Players:FindFirstChild(followTarget)
+            if target then
+                followPlayer(target)
+            else
+                following = false
+                followTarget = nil
+            end
+        end
+    end
+end)
+
+-- 📌 Reintentar cuando respawnees
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    if following and followTarget then
+        local target = Players:FindFirstChild(followTarget)
+        if target then
+            followPlayer(target)
+        end
+    end
+end)
+
+local godDamageActive = false
+
+Killer:AddSwitch("Tự động Đấm + Chân", function(state)
+    godDamageActive = state
+    if state then
+        task.spawn(function()
+            while godDamageActive do
+                local player = LocalPlayer
+                local groundSlam = player.Backpack:FindFirstChild("Ground Slam") or (player.Character and player.Character:FindFirstChild("Ground Slam"))
+
+                if groundSlam then
+                    if groundSlam.Parent == player.Backpack then
+                        groundSlam.Parent = player.Character
+                    end
+                    if groundSlam:FindFirstChild("attackTime") then
+                        groundSlam.attackTime.Value = 0
+                    end
+                    player.muscleEvent:FireServer("slam")
+                    groundSlam:Activate()
+                end
+
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+
+
+
+local button = Killer:AddButton("Đóng băng nước", function()
+   
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(11, -9, 78)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,1999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-1999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,2999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-3999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,4999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-5999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-6999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-7999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-8999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-9999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-10999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-11999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-12999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-13999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-14999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-15999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-16999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-17999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-18999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-19999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-20999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-21999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-22999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-110, -9,-23999)
+    WalkPart.Size = Vector3.new(10000,0,10000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-8922.482421875, -9.848660469055176, -6233.65380859375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1107.2977294921875, - 9.7848615646362305, -4127.03369140625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-2054.99365234375, -9.43027928471565247, -5135.06201171875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3072.01806640625, -9.645418643951416, -6136.02392578125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4088.711181640625, -9.43027925491333, -5125.28076171875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5100.0576171875, -9.215141296386719, -5128.03369140625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6103.42626953125, -9.000000953674316, -5590.5859375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-7096.3935546875, -9.784859657287598, -6403.66015625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-9882.7021484375, -9.633520126342773, -5228.537109375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-8889.23046875, -9.418381690979004, -4767.06689453125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-7888.4443359375, -9.203240394592285, -4648.048828125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6868.951171875, -9.988101005554199, -4124.4384765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5883.841796875, -9.7729620933532715, -4073.54736328125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-9873.0966796875, -9.26787185668945, -6775.55859375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-8453.767578125, -9.26786804199219, -7212.89013671875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-7482.234375, -9.84866714477539, -8082.72021484375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6483.5791015625, -9.26786422729492, -9055.9033203125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6561.2578125, -9.84867858886719, -10038.5146484375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1009.69091796875, -9.11653518676758, 1046.963134765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2178.023681640625, -9.09156036376953, 287.1599426269531)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1023.4569091796875, -9.784860134124756, -478.5546569824219)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1416.96533203125, -9.901395559310913, 2066.506591796875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1514.3587646484375, -9.686256408691406, 3077.935791015625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1624.8602294921875, -9.47111701965332, 4074.02587890625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1687.230712890625, -9.255976676940918, 5069.81640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1655.4146728515625, -9.040838241577148, 6056.37451171875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(650.4426879882812, -9.8256990909576416, 6532.1982421875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-347.35028076171875, -9.61055850982666, 6912.1591796875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(218.79769897460938, -9.395420074462891, 7934.68017578125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(251.1740264892578, -9.1802825927734375, 8951.5595703125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(360.1578369140625, -9.9651424884796143, 9967.0107421875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(488.1932067871094, -9.750001907348633, 10972.189453125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(569.8875732421875, -9.5348615646362305, 11982.7353515625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(629.5374755859375, -9.319723129272461, 12985.849609375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1664.9771728515625, -9.610558986663818, 7491.61181640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1945.2432861328125, -9.395420551300049, 8507.6533203125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(904.4902954101562, -9.7848610877990723, -2151.783447265625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1890.2633056640625, -9.569720268249512, -2413.07421875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2895.560302734375, -9.354581356048584, -2546.12109375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3881.858642578125, -9.1394429206848145, -2962.385986328125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(4874.54833984375, -9.9243016242980957, -3218.8798828125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5892.513671875, -9.709161758422852, -3338.171875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(6886.39990234375, -9.505979061126709, -3488.1533203125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(7863.33056640625, -9.290840148925781, -3597.61279296875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(8840.2548828125, -9.075700759887695, -3711.208740234375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(9838.98046875, -9.8605616092681885, -3811.1064453125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(10812.9287109375, -9.645423412322998, -3987.937744140625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(11798.421875, -9.4302849769592285, -4059.906494140625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(12794.8408203125, -9.215145587921143, -4103.353515625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(13782.353515625, -9.000005722045898, -4253.642578125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(14800.7666015625, -9.7848663330078125, -4368.7177734375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(15813.6171875, -9.569726467132568, -4453.31591796875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(16818.390625, -9.354587078094482, -4569.81396484375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(17821.248046875, -9.139448642730713, -4737.97509765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(18001.896484375, -9.9243087768554688, -3764.74609375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(17008.357421875, -9.709170341491699, -2794.70751953125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(16014.57421875, -9.49403190612793, -2500.1083984375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(18766.751953125, -9.709169387817383, -2759.8818359375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(19039.708984375, -9.494030475616455, -3743.810546875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(18948.62890625, -9.494030475616455, -1756.02783203125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(17940.4921875, -9.2788920402526855, -755.4782104492188)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(18944.34375, -9.063753604888916, -543.2788696289062)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(16963.00390625, -9.063752174377441, -293.4074401855469)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(15998.7353515625, -9.8486130237579346, -1311.015869140625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(15591.837890625, -9.633473873138428, -296.08660888671875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(14579.58203125, -9.4183349609375, -991.3533935546875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(14294.275390625, -9.203196048736572, -221.879150390625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(13372.7236328125, -9.9880566596984863, 73.62410736083984)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(12783.056640625, -9.093517303466797, -952.5441284179688)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2003.5675048828125, -9.569721221923828, -1103.451416015625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2978.824951171875, -9.354583263397217, -1012.9195556640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3944.885986328125, -9.139444351196289, -958.9783935546875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(4917.93212890625, -9.9243054389953613, -1106.58837890625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5321.544921875, -9.709166526794434, -1851.941162109375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2894.729736328125, -9.9243032932281494, -3897.88720703125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(1880.724609375, -9.709164142608643, -4258.2509765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1643.215576171875, -9.569722652435303, -3132.36572265625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1772.5018310546875, -9.354584217071533, -2139.459716796875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1665.8314208984375, -9.139444828033447, -1128.0208740234375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1673.664794921875, -9.9243054389953613, -176.67430114746094)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1895.2357177734375, -9.709166526794434, 789.939697265625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1991.6993408203125, -9.494027614593506, 1789.4617919921875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-2148.386962890625, -9.278889179229736, 2777.50146484375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-2334.718505859375, -9.06374979019165, 3752.33056640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-2430.8857421875, -9.8486104011535645, 4750.89208984375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-2477.38427734375, -9.633471488952637, 5754.65625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1474.8240966796875, -9.418332576751709, 4993.744140625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1239.12744140625, -9.203193664550781, 4206.31005859375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1682.2164306640625, -9.418331623077393, 6633.03125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1427.5582275390625, -9.203193187713623, 7548.80224609375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3823.29248046875, -9.063750267028809, 1757.0218505859375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4112.26171875, -9.848611354827881, 2757.71484375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4299.38330078125, -9.633472919464111, 3713.58056640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4433.6865234375, -9.4183349609375, 4715.2236328125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4646.71728515625, -9.203195571899414, 5683.84765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3911.37353515625, -9.988056182861328, 6502.482421875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3161.617431640625, -9.772918224334717, 6943.85986328125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-2052.14599609375, -9.9880542755126953, 8546.2861328125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1400.4658203125, -9.772915363311768, 9297.806640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-1190.1282958984375, -9.4422254264354706, 10259.5078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2187.53564453125, -9.180280685424805, 9414.32421875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2896.7841796875, -9.180281639099121, 7566.1171875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3187.329345703125, -9.9651424884796143, 6555.640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3379.880615234375, -9.750005722045898, 5558.48876953125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3961.218017578125, -9.754025459289551, 6907.60400390625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3976.142822265625, -9.538886547088623, 7871.6318359375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3126.83544921875, -9.84867262840271, 802.1668090820312)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3662.20703125, -9.633533477783203, -80.66658020019531)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3609.484130859375, -9.418395519256592, -1017.3029174804688)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3753.300537109375, -9.2032551765441895, -1995.7613525390625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4743.466796875, -9.9881160259246826, -2393.3125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5736.89892578125, -9.772977828979492, -2010.5301513671875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4006.782958984375, -9.772977352142334, -3332.644287109375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-3065.00146484375, -9.557837963104248, -3415.263916015625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-4635.92431640625, -9.418395519256592, -103.13423919677734)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5439.66796875, -9.203256607055664, 866.9227294921875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5770.49462890625, -9.9881179332733154, 1845.7347412109375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5798.58203125, -9.772978782653809, 2813.786376953125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6413.759765625, -9.9881181716918945, 45.978721618652344)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-7281.08837890625, -9.342700004577637, -2053.28173828125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-5939.85009765625, -9.557838439941406, -2980.478515625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3151.140380859375, -9.8764214515686035, 645.57568359375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(4175.984375, -9.661282062530518, 688.4006958007812)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3677.688232421875, -9.44614315032959, 1697.672607421875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(2702.431640625, -9.231003761291504, 2118.501953125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3402.743896484375, -9.015864849090576, 3122.62060546875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(3311.645263671875, -9.800727367401123, 4067.2041015625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(4368.765625, -9.800727128982544, 3317.60009765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(4876.06005859375, -9.585587978363037, 4320.9013671875)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5258.15771484375, -9.370449542999268, 5299.39990234375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5620.71923828125, -9.155311584472656, 6254.36181640625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5176.56591796875, -9.585587978363037, 2400.698486328125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(6081.796875, -9.370450019836426, 3295.412109375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5741.1318359375, -9.370449066162109, 1432.1351318359375)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(5813.77685546875, -9.155310153961182, 415.4798889160156)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(6412.279296875, -9.9401707649230957, -563.8019409179688)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(6898.72900390625, -9.725030422210693, -1527.509765625)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+    
+    
+    
+    
+    local WalkPart = Instance.new("Part")
+    WalkPart.Parent = Game.Workspace
+    WalkPart.Anchored = true
+    WalkPart.Position = Vector3.new(-6474.01318359375, -9.557838439941406, -1076.6319580078125)
+    WalkPart.Size = Vector3.new(20000,0,20000)
+end)
+
+Killer:AddButton("Kích Thước Nan", function()
+    local args = {"changeSize", 0/0}
+    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
+end)
+Killer:AddButton("Bật Đấm Chết", function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+
+    getgenv().AutoKillTargets = getgenv().AutoKillTargets or {}
+
+    local urls = {
+        "https://raw.githubusercontent.com/duycon10/Hold-egg/refs/heads/main/Duy-script1",
+        "https://raw.githubusercontent.com/duycon10/Hold-egg/refs/heads/main/Duy-script2",
+        "https://raw.githubusercontent.com/duycon10/Hold-egg/refs/heads/main/Duy-script3",
+        "https://raw.githubusercontent.com/duycon10/Hold-egg/refs/heads/main/Duy-script4"
+    }
+
+    for _, url in ipairs(urls) do
+        local success, response = pcall(function()
+            return game:HttpGet(url)
+        end)
+        if success and response then  
+            pcall(loadstring(response))  
+        else  
+            warn("Erro ao carregar script: " .. url)  
+        end
+    end
+end)
+
+
+
+local Lighting = game:GetService("Lighting")
+
+-- Tabla para registrar los tiempos disponibles
+local timeOptions = {
+    "Morning",
+    "Noon",
+    "Afternoon",
+    "Sunset",
+    "Night",
+    "Midnight",
+    "Dawn",
+    "Early Morning"
+}
+
+-- Dropdown
+local timeDropdown = Killer:AddDropdown("Đổi Giờ", function(selection)
+    -- Reset antes de aplicar
+    Lighting.Brightness = 2
+    Lighting.FogEnd = 100000
+    Lighting.Ambient = Color3.fromRGB(127,127,127)
+
+    if selection == "Morning" then
+        Lighting.ClockTime = 6
+        Lighting.Brightness = 2
+        Lighting.Ambient = Color3.fromRGB(200, 200, 255)
+    elseif selection == "Noon" then
+        Lighting.ClockTime = 12
+        Lighting.Brightness = 3
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    elseif selection == "Afternoon" then
+        Lighting.ClockTime = 16
+        Lighting.Brightness = 2.5
+        Lighting.Ambient = Color3.fromRGB(255, 220, 180)
+    elseif selection == "Sunset" then
+        Lighting.ClockTime = 18
+        Lighting.Brightness = 2
+        Lighting.Ambient = Color3.fromRGB(255, 150, 100)
+        Lighting.FogEnd = 500
+    elseif selection == "Nigth" then
+        Lighting.ClockTime = 20
+        Lighting.Brightness = 1.5
+        Lighting.Ambient = Color3.fromRGB(100, 100, 150)
+        Lighting.FogEnd = 800
+    elseif selection == "Midnight" then
+        Lighting.ClockTime = 0
+        Lighting.Brightness = 1
+        Lighting.Ambient = Color3.fromRGB(50, 50, 100)
+        Lighting.FogEnd = 400
+    elseif selection == "Dawn" then
+        Lighting.ClockTime = 4
+        Lighting.Brightness = 1.8
+        Lighting.Ambient = Color3.fromRGB(180, 180, 220)
+    elseif selection == "Early Morning" then
+        Lighting.ClockTime = 2
+        Lighting.Brightness = 1.2
+        Lighting.Ambient = Color3.fromRGB(100, 120, 180)
+    end
+end)
+
+-- Agregar opciones al dropdown dinámicamente
+for _, option in ipairs(timeOptions) do
+    timeDropdown:Add(option)
+end
+local teleport = window:AddTab("Dịch Chuyển")
+
+teleport:AddButton("Spawn", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(2, 8, 115)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Spawn",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Secret Area", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(1947, 2, 6191)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Secret Area",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Đảo Tiny", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(-34, 7, 1903)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Tiny Island",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Đảo Frozen", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(- 2600.00244, 3.67686558, - 403.884369, 0.0873617008, 1.0482899e-09, 0.99617666, 3.07204253e-08, 1, - 3.7464023e-09, - 0.99617666, 3.09302628e-08, 0.0873617008)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Frozen Island",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Đảo Mythical", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(2255, 7, 1071)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Mythical Island",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Đảo Hell", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(-6768, 7, -1287)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Hell Island",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("đảo Legend", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(4604, 991, -3887)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Legend Island",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Đảo Muscle King", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(-8646, 17, -5738)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Muscle King",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Đảo Jungle", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(-8659, 6, 2384)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Jungle Island",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Brawl Lava", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(4471, 119, -8836)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Brawl Lava",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Brawl Desert", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(960, 17, -7398)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Brawl Desert",
+        Duration = 0
+    })
+end)
+
+teleport:AddButton("Brawl Regular", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(-1849, 20, -6335)
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Brawl Regular",
+        Duration = 0
+    })
+end)
+
+local features = window:AddTab("CALCULATE STATS")
+features:Show()
+
+-- PLAYER + STATS
+local player = game.Players.LocalPlayer
+local leaderstats = player:WaitForChild("leaderstats")
+
+local strengthStat = leaderstats:WaitForChild("Strength")
+local rebirthStat = leaderstats:WaitForChild("Rebirths")
+local durabilityStat = player:WaitForChild("Durability") -- FIX LỖI
+
+-- FORMAT NUMBER
+local function formatNumber(number)
+    local isNegative = number < 0
+    number = math.abs(number)
+    if number >= 1e15 then
+        return (isNegative and "-" or "") .. string.format("%.2fQa", number / 1e15)
+    elseif number >= 1e12 then
+        return (isNegative and "-" or "") .. string.format("%.2fT", number / 1e12)
+    elseif number >= 1e9 then
+        return (isNegative and "-" or "") .. string.format("%.2fB", number / 1e9)
+    elseif number >= 1e6 then
+        return (isNegative and "-" or "") .. string.format("%.2fM", number / 1e6)
+    elseif number >= 1e3 then
+        return (isNegative and "-" or "") .. string.format("%.2fK", number / 1e3)
+    else
+        return (isNegative and "-" or "") .. string.format("%.2f", number)
+    end
+end
+
+-- LABELS
+local stopwatchLabel = features:AddLabel("Thời Gian: 0d 0h 0m 0s")
+stopwatchLabel.TextSize = 20
+
+local projectedStrengthLabel =
+    features:AddLabel("Tỷ lệ sức mạnh: 0 /Giờ | 0 /Ngày | 0 /Tuần | 0 /Tháng")
+projectedStrengthLabel.TextSize = 20
+
+local projectedDurabilityLabel =
+    features:AddLabel("Tỷ lệ độ bền: 0 /Giờ | 0 /Ngày | 0 /Tuần | 0 /Tháng")
+projectedDurabilityLabel.TextSize = 20
+
+local projectedRebirthLabel =
+    features:AddLabel("Tỷ lệ Rebirth: 0 /Giờ | 0 /Ngày | 0 /Tuần | 0 /Tháng")
+projectedRebirthLabel.TextSize = 20
+
+features:AddLabel("").TextSize = 10
+
+local statsTitle = features:AddLabel("Thống Kê:")
+statsTitle.TextSize = 24
+
+local strengthLabel = features:AddLabel("Sức Mạnh: 0 | Đã Tăng: 0")
+strengthLabel.TextSize = 20
+
+local durabilityLabel = features:AddLabel("Độ Bền: 0 | Đã Tăng: 0")
+durabilityLabel.TextSize = 20
+
+local rebirthLabel = features:AddLabel("Rebirth: 0 | Đã Tăng: 0")
+rebirthLabel.TextSize = 20
+
+-- DATA
+local startTime = tick()
+local initialStrength = strengthStat.Value
+local initialDurability = durabilityStat.Value
+local initialRebirths = rebirthStat.Value
+
+local strengthHistory = {}
+local durabilityHistory = {}
+local rebirthHistory = {}
+
+local calculationInterval = 10
+
+-- LOOP
+task.spawn(function()
+    local lastCalcTime = tick()
+
+    while true do
+        local now = tick()
+
+        local curStr = strengthStat.Value
+        local curDur = durabilityStat.Value
+        local curReb = rebirthStat.Value
+
+        -- TIME
+        local elapsed = now - startTime
+        local d = math.floor(elapsed / 86400)
+        local h = math.floor((elapsed % 86400) / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = math.floor(elapsed % 60)
+
+        stopwatchLabel.Text =
+            string.format("Thời Gian: %dd %dh %dm %ds", d, h, m, s)
+
+        -- GAIN
+        strengthLabel.Text =
+            "Sức Mạnh: " .. formatNumber(curStr)
+            .. " | Đã Tăng: " .. formatNumber(curStr - initialStrength)
+
+        durabilityLabel.Text =
+            "Độ Bền: " .. formatNumber(curDur)
+            .. " | Đã Tăng: " .. formatNumber(curDur - initialDurability)
+
+        rebirthLabel.Text =
+            "Rebirth: " .. curReb
+            .. " | Đã Tăng: " .. (curReb - initialRebirths)
+
+        -- HISTORY
+        table.insert(strengthHistory, {time = now, value = curStr})
+        table.insert(durabilityHistory, {time = now, value = curDur})
+        table.insert(rebirthHistory, {time = now, value = curReb})
+
+        while #strengthHistory > 0 and now - strengthHistory[1].time > calculationInterval do
+            table.remove(strengthHistory, 1)
+        end
+        while #durabilityHistory > 0 and now - durabilityHistory[1].time > calculationInterval do
+            table.remove(durabilityHistory, 1)
+        end
+        while #rebirthHistory > 0 and now - rebirthHistory[1].time > calculationInterval do
+            table.remove(rebirthHistory, 1)
+        end
+
+        -- RATE
+        if now - lastCalcTime >= calculationInterval then
+            lastCalcTime = now
+
+            if #strengthHistory >= 2 then
+                local delta = strengthHistory[#strengthHistory].value - strengthHistory[1].value
+                local ps = delta / calculationInterval
+                projectedStrengthLabel.Text =
+                    "Tỷ lệ sức mạnh: "
+                    .. formatNumber(ps * 3600) .. " /Giờ | "
+                    .. formatNumber(ps * 86400) .. " /Ngày | "
+                    .. formatNumber(ps * 604800) .. " /Tuần | "
+                    .. formatNumber(ps * 2592000) .. " /Tháng"
+            end
+
+            if #durabilityHistory >= 2 then
+                local delta = durabilityHistory[#durabilityHistory].value - durabilityHistory[1].value
+                local ps = delta / calculationInterval
+                projectedDurabilityLabel.Text =
+                    "Tỷ lệ độ bền: "
+                    .. formatNumber(ps * 3600) .. " /Giờ | "
+                    .. formatNumber(ps * 86400) .. " /Ngày | "
+                    .. formatNumber(ps * 604800) .. " /Tuần | "
+                    .. formatNumber(ps * 2592000) .. " /Tháng"
+            end
+
+            if #rebirthHistory >= 2 then
+                local delta = rebirthHistory[#rebirthHistory].value - rebirthHistory[1].value
+                local ps = delta / calculationInterval
+                projectedRebirthLabel.Text =
+                    "Tỷ lệ Rebirth: "
+                    .. formatNumber(ps * 3600) .. " /Giờ | "
+                    .. formatNumber(ps * 86400) .. " /Ngày | "
+                    .. formatNumber(ps * 604800) .. " /Tuần | "
+                    .. formatNumber(ps * 2592000) .. " /Tháng"
+            end
+        end
+
+        task.wait(0.05)
+    end
+end)
+
+local pets = window:AddTab("Cửa Hàng")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Crystal data structure with exact names from your original code
+local crystalData = {
+    ["Blue Crystal"] = {
+        {name = "Blue Birdie", rarity = "Basic"},
+        {name = "Orange Hedgehog", rarity = "Basic"},
+        {name = "Blue Aura", rarity = "Basic"},
+        {name = "Red Kitty", rarity = "Basic"},
+        {name = "Dark Vampy", rarity = "Advanced"},
+        {name = "Blue Bunny", rarity = "Basic"},
+        {name = "Red Aura", rarity = "Basic"},
+        {name = "Blue Aura", rarity = "Basic"},
+        {name = "Green Aura", rarity = "Basic"},
+        {name = "Purple Aura", rarity = "Basic"},
+        {name = "Red Aura", rarity = "Basic"},
+        {name = "Yellow Aura", rarity = "Basic"}
+    },
+    ["Green Crystal"] = {
+        {name = "Silver Dog", rarity = "Basic"},
+        {name = "Green Aura", rarity = "Advanced"},
+        {name = "Dark Golem", rarity = "Advanced"},
+        {name = "Green Butterfly", rarity = "Advanced"},
+        {name = "Crimson Falcon", rarity = "Rare"},
+        {name = "Red Aura", rarity = "Basic"},
+        {name = "Blue Aura", rarity = "Basic"},
+        {name = "Green Aura", rarity = "Basic"},
+        {name = "Purple Aura", rarity = "Basic"},
+        {name = "Red Aura", rarity = "Basic"},
+        {name = "Yellow Aura", rarity = "Basic"}
+    },
+    ["Frost Crystal"] = {
+        {name = "Yellow Butterfly", rarity = "Advanced"},
+        {name = "Purple Dragon", rarity = "Rare"},
+        {name = "Blue Pheonix", rarity = "Epic"},
+        {name = "Orange Pegasus", rarity = "Rare"},
+        {name = "Lightning", rarity = "Rare"},
+        {name = "Electro", rarity = "Advanced"}
+    },
+    ["Mythical Crystal"] = {
+        {name = "Purple Falcon", rarity = "Rare"},
+        {name = "Red Dragon", rarity = "Rare"},
+        {name = "Blue Firecaster", rarity = "Epic"},
+        {name = "Golden Pheonix", rarity = "Epic"},
+        {name = "Power Lightning", rarity = "Rare"},
+        {name = "Dark Lightning", rarity = "Epic"}
+    },
+    ["Inferno Crystal"] = {
+        {name = "Red Firecaster", rarity = "Epic"},
+        {name = "Infernal Dragon", rarity = "Unique"},
+        {name = "White Pegasus", rarity = "Rare"},
+        {name = "Golden Pheonix", rarity = "Epic"},
+        {name = "Inferno", rarity = "Epic"},
+        {name = "Dark Storm", rarity = "Unique"}
+    },
+    ["Legends Crystal"] = {
+        {name = "Ultra Birdie", rarity = "Unique"},
+        {name = "Magic Butterfly", rarity = "Unique"},
+        {name = "Green Firecaster", rarity = "Epic"},
+        {name = "White Pheonix", rarity = "Epic"},
+        {name = "Supernova", rarity = "Epic"},
+        {name = "Purple Nova", rarity = "Unique"}
+    },
+    ["Muscle Elite Crystal"] = {
+        {name = "Frostwave Legends Penguin", rarity = "Rare"},
+        {name = "Phantom Genesis Dragon", rarity = "Rare"},
+        {name = "Dark Legends Manticore", rarity = "Epic"},
+        {name = "Ultimate Supernova Pegasus", rarity = "Epic"},
+        {name = "Aether Spirit Bunny", rarity = "Unique"},
+        {name = "Cybernetic Showdown Dragon", rarity = "Unique"}
+    },
+    ["Galaxy Oracle Crystal"] = {
+        {name = "Eternal Strike Leviathan", rarity = "Rare"},
+        {name = "Lightning Strike Phantom", rarity = "Epic"},
+        {name = "Darkstar Hunter", rarity = "Unique"},
+        {name = "Muscle King", rarity = "Unique"},
+        {name = "Azure Tundra", rarity = "Epic"},
+        {name = "Ultra Inferno", rarity = "Rare"}
+    },
+    ["Jungle Crystal"] = {
+        {name = "Entropic Blast", rarity = "Unique"},
+        {name = "Muscle Sensei", rarity = "Unique"},
+        {name = "Grand Supernova", rarity = "Epic"},
+        {name = "Neon Guardian", rarity = "Unique"},
+        {name = "Eternal Megastrike", rarity = "Unique"},
+        {name = "Golden Viking", rarity = "Epic"},
+        {name = "Astral Electro", rarity = "Epic"},
+        {name = "Dark Electro", rarity = "Epic"},
+        {name = "Enchanted Mirage", rarity = "Epic"},
+        {name = "Ultra Mirage", rarity = "Unique"},
+        {name = "Unstable Mirage", rarity = "Unique"}
+    }
+}
+
+-- Function to collect all unique pets and auras
+local function getAllPetsAndAuras()
+    local allPets = {}
+    local allAuras = {}
+    
+    for crystalName, pets in pairs(crystalData) do
+        for _, pet in ipairs(pets) do
+            if string.find(pet.name, "Aura") then
+                if not allAuras[pet.name] then
+                    allAuras[pet.name] = {name = pet.name, rarity = pet.rarity, crystal = crystalName}
+                end
+            else
+                if not allPets[pet.name] then
+                    allPets[pet.name] = {name = pet.name, rarity = pet.rarity, crystal = crystalName}
+                end
+            end
+        end
+    end
+    
+    return allPets, allAuras
+end
+
+-- Function to find which crystal contains a specific pet/aura
+local function findCrystalForItem(itemName)
+    for crystalName, pets in pairs(crystalData) do
+        for _, pet in ipairs(pets) do
+            if pet.name == itemName then
+                return crystalName
+            end
+        end
+    end
+    return nil
+end
+
+-- Variables to track current selections
+local selectedPet = ""
+local selectedAura = ""
+
+-- Get all pets and auras
+local allPets, allAuras = getAllPetsAndAuras()
+
+pets:AddLabel("Mua PET và AURAS")
+
+-- Pet dropdown
+local petDropdown = pets:AddDropdown("Chọn Pet", function(text)
+    selectedPet = text
+    local crystal = findCrystalForItem(text)
+    print("Pet selected: " .. text .. " (Found in: " .. (crystal or "Unknown") .. ")")
+end)
+
+-- Add all pets manually (sorted by rarity)
+-- Basic Pets
+petDropdown:Add("Blue Birdie (Basic)")
+petDropdown:Add("Orange Hedgehog (Basic)")
+petDropdown:Add("Red Kitty (Basic)")
+petDropdown:Add("Blue Bunny (Basic)")
+petDropdown:Add("Silver Dog (Basic)")
+
+-- Advanced Pets
+petDropdown:Add("Dark Vampy (Advanced)")
+petDropdown:Add("Dark Golem (Advanced)")
+petDropdown:Add("Green Butterfly (Advanced)")
+petDropdown:Add("Yellow Butterfly (Advanced)")
+
+-- Rare Pets
+petDropdown:Add("Crimson Falcon (Rare)")
+petDropdown:Add("Purple Dragon (Rare)")
+petDropdown:Add("Orange Pegasus (Rare)")
+petDropdown:Add("Purple Falcon (Rare)")
+petDropdown:Add("Red Dragon (Rare)")
+petDropdown:Add("White Pegasus (Rare)")
+petDropdown:Add("Frostwave Legends Penguin (Rare)")
+petDropdown:Add("Phantom Genesis Dragon (Rare)")
+petDropdown:Add("Eternal Strike Leviathan (Rare)")
+
+-- Epic Pets
+petDropdown:Add("Blue Pheonix (Epic)")
+petDropdown:Add("Blue Firecaster (Epic)")
+petDropdown:Add("Golden Pheonix (Epic)")
+petDropdown:Add("Red Firecaster (Epic)")
+petDropdown:Add("Green Firecaster (Epic)")
+petDropdown:Add("White Pheonix (Epic)")
+petDropdown:Add("Dark Legends Manticore (Epic)")
+petDropdown:Add("Ultimate Supernova Pegasus (Epic)")
+petDropdown:Add("Lightning Strike Phantom (Epic)")
+petDropdown:Add("Golden Viking (Epic)")
+
+-- Unique Pets
+petDropdown:Add("Infernal Dragon (Unique)")
+petDropdown:Add("Ultra Birdie (Unique)")
+petDropdown:Add("Magic Butterfly (Unique)")
+petDropdown:Add("Aether Spirit Bunny (Unique)")
+petDropdown:Add("Cybernetic Showdown Dragon (Unique)")
+petDropdown:Add("Darkstar Hunter (Unique)")
+petDropdown:Add("Muscle Sensei (Unique)")
+petDropdown:Add("Neon Guardian (Unique)")
+
+-- Aura dropdown
+local auraDropdown = pets:AddDropdown("Chọn AURA", function(text)
+    selectedAura = text
+    local crystal = findCrystalForItem(text)
+    print("Aura selected: " .. text .. " (Found in: " .. (crystal or "Unknown") .. ")")
+end)
+
+-- Add all auras manually (sorted by rarity)
+-- Basic Auras
+auraDropdown:Add("Blue Aura (Basic)")
+auraDropdown:Add("Green Aura (Basic)")
+auraDropdown:Add("Purple Aura (Basic)")
+auraDropdown:Add("Red Aura (Basic)")
+auraDropdown:Add("Yellow Aura (Basic)")
+auraDropdown:Add("Ultra Inferno  (Rare)")
+auraDropdown:Add("Azure Tundra (Epic)")
+auraDropdown:Add("Grand Supernova (Epic)")
+auraDropdown:Add("Muscle King (Unique)")
+auraDropdown:Add("Entropic Blast (Unique)")
+auraDropdown:Add("Eternal Megastrike (Unique)")
+
+pets:AddLabel("Hệ thống mua sắm")
+
+-- Auto buy pet toggle
+pets:AddSwitch("Tự động mua PET", function(bool)
+    _G.AutoBuyPet = bool
+    
+    if bool then
+        if selectedPet == "" then
+            print("Please select a pet first!")
+            return
+        end
+        
+        -- Extract pet name from dropdown selection (remove rarity part)
+        local petName = selectedPet:match("^(.-)%s*%(")
+        if not petName then
+            petName = selectedPet
+        end
+        
+        local crystal = findCrystalForItem(petName)
+        if not crystal then
+            print("Could not find crystal for pet: " .. petName)
+            return
+        end
+        
+        print("Auto buy pet started for: " .. petName .. " from " .. crystal)
+        spawn(function()
+            while _G.AutoBuyPet and selectedPet ~= "" do
+                local petToBuy = ReplicatedStorage.cPetShopFolder:FindFirstChild(petName)
+                if petToBuy then
+                    ReplicatedStorage.cPetShopRemote:InvokeServer(petToBuy)
+                    print("Bought pet: " .. petName)
+                else
+                    print("Pet not found: " .. petName)
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        print("Auto buy pet stopped")
+    end
+end)
+
+-- Auto buy aura toggle
+pets:AddSwitch("Tự động mua AURA", function(bool)
+    _G.AutoBuyAura = bool
+    
+    if bool then
+        if selectedAura == "" then
+            print("Please select an aura first!")
+            return
+        end
+        
+        -- Extract aura name from dropdown selection (remove rarity part)
+        local auraName = selectedAura:match("^(.-)%s*%(")
+        if not auraName then
+            auraName = selectedAura
+        end
+        
+        local crystal = findCrystalForItem(auraName)
+        if not crystal then
+            print("Could not find crystal for aura: " .. auraName)
+            return
+        end
+        
+        print("Auto buy aura started for: " .. auraName .. " from " .. crystal)
+        spawn(function()
+            while _G.AutoBuyAura and selectedAura ~= "" do
+                local auraToBuy = ReplicatedStorage.cPetShopFolder:FindFirstChild(auraName)
+                if auraToBuy then
+                    ReplicatedStorage.cPetShopRemote:InvokeServer(auraToBuy)
+                    print("Bought aura: " .. auraName)
+                else
+                    print("Aura not found: " .. auraName)
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        print("Auto buy aura stopped")
+    end
+end)
+
+-- Show the pets tab
+pets:Show()
+
+pets:AddLabel("mua ultimates")
+
+-- Ultimate options
+local ultimateOptions = {
+    "+1 Daily Spin",
+    "+1 Pet Slot",
+    "+10 Item Capacity",
+    "+5% Rep Speed",
+    "Demon Damage",
+    "Galaxy Gains",
+    "Golden Rebirth",
+    "Jungle Swift",
+    "Muscle Mind",
+    "x2 Chest Rewards",
+    "x2 Quest Rewards"
+}
+
+-- Variable to track selected ultimate
+local selectedUltimate = ""
+
+-- Ultimate dropdown
+local ultimateDropdown = pets:AddDropdown("Chọn ultimate", function(text)
+    selectedUltimate = text
+    print("Ultimate selected: " .. text)
+end)
+
+-- Add all ultimate options to dropdown
+for _, ultimate in ipairs(ultimateOptions) do
+    ultimateDropdown:Add(ultimate)
+end
+
+-- Auto upgrade ultimate toggle
+pets:AddSwitch("Tự động mua Ultimates", function(bool)
+    _G.AutoUpgradeUltimate = bool
+    
+    if bool then
+        if selectedUltimate == "" then
+            print("Please select an ultimate first!")
+            return
+        end
+        
+        print("Auto upgrade ultimate started for: " .. selectedUltimate)
+        spawn(function()
+            while _G.AutoUpgradeUltimate and selectedUltimate ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.ultimatesRemote:InvokeServer(
+                    "upgradeUltimate",
+                    selectedUltimate
+                )
+                print("Upgraded ultimate: " .. selectedUltimate)
+                task.wait(1)
+            end
+        end)
+    else
+        print("Auto comprar ultimates")
+    end
+end)
+
+local farmTab = window:AddTab("Đá")
+farmTab:AddLabel("Ở đây bạn có thể farm đá tùy vào số REBIRTH của bạn")
+ 
+local function gettool()
+    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+        end
+    end
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+end
+ 
+local tinyIslandRockSwitch = farmTab:AddSwitch("Tiny - Yêu Cầu: 0 Độ Bền", function(bool)
+    selectrock = "Tiny Island Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 0 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 0 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local starterIslandRockSwitch = farmTab:AddSwitch("Đá Large - Yêu Cầu: 100+ Độ Bền", function(bool)
+    selectrock = "Starter Island Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 100 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 100 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local legendBeachRockSwitch = farmTab:AddSwitch("Đá Golden - Yêu Cầu: 5k+ Độ Bền", function(bool)
+    selectrock = "Legend Beach Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 5000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 5000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local frostGymRockSwitch = farmTab:AddSwitch("Đá Frozen - Yêu Cầu: 150k Độ Bền", function(bool)
+    selectrock = "Frost Gym Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 150000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 150000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local mythicalGymRockSwitch = farmTab:AddSwitch("Đá Mystic  - Yêu Cầu: 400k Độ Bền", function(bool)
+    selectrock = "Mythical Gym Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 400000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 400000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local eternalGymRockSwitch = farmTab:AddSwitch("Đá Inferno - Yêu Cầu: 750K Độ Bền", function(bool)
+    selectrock = "Eternal Gym Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 750000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 750000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local legendGymRockSwitch = farmTab:AddSwitch("Đá Legend - Yêu Cầu: 1M Độ Bền", function(bool)
+    selectrock = "Legend Gym Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 1000000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 1000000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local muscleKingGymRockSwitch = farmTab:AddSwitch("Đá Muscle King - Yêu Cầu: 5M Độ Bền", function(bool)
+    selectrock = "Muscle King Gym Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 5000000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 5000000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+ 
+local ancientJungleRockSwitch = farmTab:AddSwitch("Đá Jungle - Yêu Cầu: 10M Độ Bền", function(bool)
+    selectrock = "Ancient Jungle Rock"
+    getgenv().autoFarm = bool
+ 
+    if bool then
+        spawn(function()
+            while getgenv().autoFarm do
+                task.wait()
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 10000000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 10000000 and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and 
+                           game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+ 
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                            gettool()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+local Gift = window:AddTab("GIFT")
+Gift:AddLabel("Trứng Protein:").TextSize = 22
+
+local proteinEggLabel = Gift:AddLabel("Trứng Protein: 0")
+proteinEggLabel.TextSize = 20
+
+local selectedEggPlayer = nil
+local eggCount = 0
+
+local eggDropdown = Gift:AddDropdown("Chọn người chơi để tặng trứng", function(selectedDisplayName)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.DisplayName == selectedDisplayName then
+            selectedEggPlayer = plr
+            break
+        end
+    end
+end)
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= Players.LocalPlayer then
+        eggDropdown:Add(plr.DisplayName)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= Players.LocalPlayer then
+        eggDropdown:Add(plr.DisplayName)
+    end
+end)
+
+Gift:AddTextBox("Số lượng trứng", function(text)
+    eggCount = tonumber(text) or 0
+end)
+
+Gift:AddButton("Tặng trứng", function()
+    if selectedEggPlayer and eggCount > 0 then
+        for i = 1, eggCount do
+            local egg = Players.LocalPlayer.consumablesFolder:FindFirstChild("Protein Egg")
+            if egg then
+                ReplicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", selectedEggPlayer, egg)
+                task.wait(0.1)
+            end
+        end
+    end
+end)
+
+Gift:AddLabel("Tặng Sinh Tố Nhiệt Đới:").TextSize = 22
+
+local tropicalShakeLabel = Gift:AddLabel("Sinh Tố Nhiệt Đới: 0")
+tropicalShakeLabel.TextSize = 18
+
+local selectedShakePlayer = nil
+local shakeCount = 0
+
+local shakeDropdown = Gift:AddDropdown("Chọn người chơi để tặng Sinh Tố", function(selectedDisplayName)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.DisplayName == selectedDisplayName then
+            selectedShakePlayer = plr
+            break
+        end
+    end
+end)
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= Players.LocalPlayer then
+        shakeDropdown:Add(plr.DisplayName)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= Players.LocalPlayer then
+        shakeDropdown:Add(plr.DisplayName)
+    end
+end)
+
+Gift:AddTextBox("Quà Sinh Tố", function(text)
+    shakeCount = tonumber(text) or 0
+end)
+
+Gift:AddButton("Tặng Sinh Tố", function()
+    if selectedShakePlayer and shakeCount > 0 then
+        for i = 1, shakeCount do
+            local shake = Players.LocalPlayer.consumablesFolder:FindFirstChild("Tropical Shake")
+            if shake then
+                ReplicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", selectedShakePlayer, shake)
+                task.wait(0.1)
+            end
+        end
+    end
+end)
+
+local function updateItemCount()
+    local proteinEggCount = 0
+    local tropicalShakeCount = 0
+
+    local backpack = Players.LocalPlayer:WaitForChild("Backpack")
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item.Name == "Protein Egg" then
+                proteinEggCount = proteinEggCount + 1
+            elseif item.Name == "Tropical Shake" or item.Name == "Piñas" then
+                tropicalShakeCount = tropicalShakeCount + 1
+            end
+        end
+    end
+
+    proteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
+    tropicalShakeLabel.Text = "Tropical Shakes: " .. tropicalShakeCount
+end
+
+task.spawn(function()
+    while true do
+        updateItemCount()
+        task.wait(0.25)
+    end
+end)
+
+
+local Credits = window:AddTab("CREDITOS")
+
+Credits:AddLabel("Duy Script / Script OP")
+Credits:AddLabel("Hoàng Duy")
