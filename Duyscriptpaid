@@ -45,8 +45,8 @@ local PET_NAME = "Swift Samurai"
 local ROCK_NAME = "Rock5M"
 local PROTEIN_EGG_NAME = "ProteinEgg"
 local PROTEIN_EGG_INTERVAL = 30 * 60
-local REPS_PER_CYCLE = 180
-local REP_DELAY = 0.01
+local REPS_PER_CYCLE = 250
+local REP_DELAY = 0.005
 local ROCK_INTERVAL = 5
 local MAX_PING = 450   -- si pasa esto, pausa
 local MIN_PING = 250   -- si baja de esto, reanuda
@@ -172,8 +172,8 @@ local PET_NAME = "Swift Samurai"
 local ROCK_NAME = "Rock5M"
 local PROTEIN_EGG_NAME = "ProteinEgg"
 local PROTEIN_EGG_INTERVAL = 30 * 60
-local REPS_PER_CYCLE = 40
-local REP_DELAY = 0.01
+local REPS_PER_CYCLE = 300
+local REP_DELAY = 0
 local ROCK_INTERVAL = 5
 local MAX_PING = 5000   -- si pasa esto, pausa
 local MIN_PING = 100   -- si baja de esto, reanuda
@@ -4270,3 +4270,4 @@ task.spawn(function()
         task.wait(0.25)
     end
 end)
+
